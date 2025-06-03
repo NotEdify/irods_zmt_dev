@@ -3,6 +3,7 @@
   "version": "0.4.0",
   "private": true,
   "dependencies": {
+    "-": "^0.0.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^6.1.0",
@@ -30,11 +31,9 @@
   },
   "scripts": {
     "start": "export REACT_APP_GIT_SHA=$(git rev-parse HEAD) && CHOKIDAR_USEPOLLING=true react-scripts start",
-    "start-pc": "react-scripts start",
     "build": "export REACT_APP_GIT_SHA=$(git rev-parse HEAD) && react-scripts build",
     "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject",
-    "lint": "eslint src/**/*.js*"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": []
