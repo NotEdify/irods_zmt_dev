@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { Button, Container, TextField, Typography } from "@mui/material";
 import { makeStyles } from "@mui/styles";
 import { useNavigate } from "react-router-dom";
@@ -7,144 +6,137 @@ import { useEnvironment, useServer } from "../contexts";
 import { renderLayout, hideLayout } from "../utils";
 
 const useStyles = makeStyles((theme) => ({
-	mainForm: {
-		marginTop: theme.spacing(15),
-		display: "flex",
-		flexDirection: "column",
-		alignItems: "center",
-	},
-	logo: {
-		maxWidth: theme.spacing(35),
-		marginBottom: theme.spacing(5),
-	},
-	error: {
-		color: "red",
-		fontSize: 15,
-		padding: "10px 10px",
-	},
-	login_button: {
-		background: "#18bc9c",
-	},
+  mainForm: {
+    marginTop: theme.spacing(15),
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  logo: {
+    maxWidth: theme.spacing(35),
+    marginBottom: theme.spacing(5),
+  },
+  error: {
+    color: "red",
+    fontSize: 15,
+    padding: "10px 10px",
+  },
+  login_button: {
+    background: "#18bc9c",
+  },
 }));
 
 export const Authenticate = () => {
-	const [username, setUsername] = useState("");
-	const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-	const [incorrect, setIncorrect] = useState(false);
-	const [serverError, setServerError] = useState(false);
+  const [incorrect, setIncorrect] = useState(false);
+  const [serverError, setServerError] = useState(false);
 
-	const classes = useStyles({ });
-	const navigate = useNavigate();
+  const classes = useStyles({});
+  const navigate = useNavigate();
 
-	const { httpApiLocation, loginLogo, brandingName } = useEnvironment();
+  const { httpApiLocation, loginLogo, brandingName } = useEnvironment();
 
-	const { loadData } = useServer();
-	const renderLogo = require(`../img/${loginLogo}`);
+  const { loadData } = useServer();
+  const renderLogo = require(`../img/${loginLogo}`);
 
-	const handleUsername = (event) => {
-		setUsername(event.target.value);
-	};
+  const handleUsername = (event) => {
+    setUsername(event.target.value);
+  };
 
-	const handlePassword = (event) => {
-		setPassword(event.target.value);
-	};
+  const handlePassword = (event) => {
+    setPassword(event.target.value);
+  };
 
-	const handleKeyDown = (event) => {
-		if (event.keyCode === 13) {
-			handleAuthenticate();
-		}
-	};
+  const handleKeyDown = (event) => {
+    if (event.keyCode === 13) {
+      handleAuthenticate();
+    }
+  };
 
-	async function handleAuthenticate() {
-		try {
-			setServerError(false);
-			setIncorrect(false);
-			await axios
-				.post(`${httpApiLocation}/authenticate`, null, {
-					headers: {
-						Authorization: `Basic ${btoa(
-							username + ":" + password
-						)}`,
-					},
-				})
-				.then((res) => {
-					if (res.status === 200) {
-						localStorage.setItem("zmt-token", res.data);
-						localStorage.setItem("zmt-username", username);
-						navigate("/home", { replace: true });
-						renderLayout();
-						loadData();
-					}
-				});
-		} catch (err) {
-			if (err.response.status >= 500) setServerError(true);
-			else setIncorrect(true);
-		}
-	}
+  async function handleAuthenticate() {
+    try {
+      setServerError(false);
+      setIncorrect(false);
+      const res = await fetch(`${httpApiLocation}/authenticate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Basic ${btoa(username + ":" + password)}`,
+        },
+      });
 
-	useEffect(() => {
-		hideLayout();
-	}, []);
+      if (res.ok && res.status === 200) {
+        localStorage.setItem("zmt-username", username);
+        localStorage.setItem("zmt-token", await res.text());
+        navigate("/home", { replace: true });
+        renderLayout();
+        loadData();
+      } else if (err.status >= 500) {
+        setServerError(true);
+      } else throw new Error(res.statusText);
+    } catch (err) {
+      setIncorrect(true);
+    }
+  }
 
-	return (
-		<Container component="main" maxWidth="xs">
-			<div className={classes.mainForm}>
-				<img
-					alt="iRODS Logo"
-					className={classes.logo}
-					src={renderLogo}
-				></img>
-				<br />
-				<Typography component="h4" variant="h5">
-					{brandingName}
-				</Typography>
-				<TextField
-					variant="outlined"
-					margin="normal"
-					label="Username"
-					fullWidth
-					required
-					onKeyDown={handleKeyDown}
-					onChange={handleUsername}
-				/>
-				<TextField
-					variant="outlined"
-					margin="normal"
-					label="Password"
-					type="password"
-					fullWidth
-					required
-					onKeyDown={handleKeyDown}
-					onChange={handlePassword}
-				/>
-				{serverError === false ? (
-					<br />
-				) : (
-					<Typography className={classes.error}>
-						Server error. Please check the Client HTTP API
-						Connection.
-					</Typography>
-				)}
-				{incorrect === false ? (
-					<br />
-				) : (
-					<Typography className={classes.error}>
-						Incorrect username or password. Please try again.
-					</Typography>
-				)}
-				<Button
-					variant="contained"
-					color="primary"
-					size="large"
-					fullWidth
-					className={classes.login_button}
-					onClick={handleAuthenticate}
-				>
-					Login
-				</Button>
-				<br />
-			</div>
-		</Container>
-	);
+  useEffect(() => {
+    hideLayout();
+  }, []);
+
+  return (
+    <Container component="main" maxWidth="xs">
+      <div className={classes.mainForm}>
+        <img alt="iRODS Logo" className={classes.logo} src={renderLogo}></img>
+        <br />
+        <Typography component="h4" variant="h5">
+          {brandingName}
+        </Typography>
+        <TextField
+          variant="outlined"
+          margin="normal"
+          label="Username"
+          fullWidth
+          required
+          onKeyDown={handleKeyDown}
+          onChange={handleUsername}
+        />
+        <TextField
+          variant="outlined"
+          margin="normal"
+          label="Password"
+          type="password"
+          fullWidth
+          required
+          onKeyDown={handleKeyDown}
+          onChange={handlePassword}
+        />
+        {serverError === false ? (
+          <br />
+        ) : (
+          <Typography className={classes.error}>
+            Server error. Please check the Client HTTP API Connection.
+          </Typography>
+        )}
+        {incorrect === false ? (
+          <br />
+        ) : (
+          <Typography className={classes.error}>
+            Incorrect username or password. Please try again.
+          </Typography>
+        )}
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          fullWidth
+          className={classes.login_button}
+          onClick={handleAuthenticate}
+        >
+          Login
+        </Button>
+        <br />
+      </div>
+    </Container>
+  );
 };
