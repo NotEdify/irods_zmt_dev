@@ -1,5 +1,4 @@
 import React from "react";
-import axios from "axios";
 import { Chip } from "@mui/material";
 
 const AVUThresholdBeforeWarningForNoSpecificQuery = 100000;
@@ -24,50 +23,63 @@ export default {
 
     const specificQuery =
       "SELECT count(unused.*) FROM (select meta_id from R_META_MAIN except select meta_id from R_OBJT_METAMAP) unused";
+    const specificParams = new URLSearchParams({
+      op: "execute_specific_query",
+      name: specificQuery,
+      count: 0, // 0 = return all results
+    });
     let specificWarning = false;
 
     const authToken = localStorage.getItem("zmt-token");
 
-    const specificResp = await axios({
-      url: `${this.httpApiLocation}/query`,
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-      params: {
-        op: "execute_specific_query",
-        name: specificQuery,
-        count: 0, // 0 = return all results
-        offset: 0,
-      },
-    }).catch(() => {
-      specificWarning = true;
-    });
-
-    if (specificResp && specificResp.data && specificResp.data.rows) {
-      // specific query succeeded, so we can use the result
-      numUnusedMeta = specificResp.data.rows[0][0];
-    } else {
-      // specific query failed; first perform a check to see how many total metadata entries there are
-      const totalMetaQuery = "SELECT COUNT(META_DATA_ATTR_ID)";
-
-      const totalMetaResp = await axios({
-        url: `${this.httpApiLocation}/query`,
+    const specificResp = await fetch(
+      `${this.httpApiLocation}/query?${specificParams.toString()}`,
+      {
         method: "GET",
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
-        params: {
-          op: "execute_genquery",
-          query: totalMetaQuery,
-          count: 0, // 0 = return all results
-          offset: 0,
-          "case-sensitive": 0,
-        },
-      }).catch(() => {});
+      },
+    )
+      .then((res) => {
+        if (res.ok) return res.json();
+        throw new Error(JSON.stringify(res));
+      })
+      .catch(() => {
+        specificWarning = true;
+      });
 
-      if (totalMetaResp && totalMetaResp.data && totalMetaResp.data.rows) {
-        totalMeta = parseInt(totalMetaResp.data.rows[0][0]);
+    if (specificResp && specificResp.rows) {
+      // specific query succeeded, so we can use the result
+      numUnusedMeta = specificResp.rows[0][0];
+    } else {
+      // specific query failed; first perform a check to see how many total metadata entries there are
+      const totalMetaQuery = "SELECT COUNT(META_DATA_ATTR_ID)";
+      const totalMetaParams = new URLSearchParams({
+        op: "execute_genquery",
+        query: totalMetaQuery,
+        count: 0, // 0 = return all results
+        offset: 0,
+        "case-sensitive": 0,
+      });
+
+      const totalMetaResp = await fetch(
+        `${this.httpApiLocation}/query?${totalMetaParams.toString()}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        },
+      )
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error(JSON.stringify(res));
+        })
+        .catch(() => {});
+
+      if (totalMetaResp && totalMetaResp.rows) {
+        totalMeta = parseInt(totalMetaResp.rows[0][0]);
       }
 
       if (totalMeta > AVUThresholdBeforeWarningForNoSpecificQuery) {
@@ -96,27 +108,34 @@ export default {
       }
 
       const getMeta = async (query) => {
+        const params = new URLSearchParams({
+          op: "execute_genquery",
+          query: query,
+          count: 0, // 0 = return all results
+          offset: 0,
+          "case-sensitive": 0,
+        });
         // returns a set of metadata
-        const resp = await axios({
-          url: `${this.httpApiLocation}/query`,
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authToken}`,
+        const resp = await fetch(
+          `${this.httpApiLocation}/query?${params.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
           },
-          params: {
-            op: "execute_genquery",
-            query: query,
-            count: 0, // 0 = return all results
-            offset: 0,
-            "case-sensitive": 0,
-          },
-        }).catch(() => {});
+        )
+          .then((res) => {
+            if (res.ok) return res.json();
+            throw new Error(JSON.stringify(res));
+          })
+          .catch(() => {});
 
         const useSet = new Set();
-        if (resp && resp.data && resp.data.rows) {
+        if (resp && resp.rows) {
           // console.log(resp.data.rows);
           // turn the ids of the metadata into a set
-          resp.data.rows.forEach((row) => {
+          resp.rows.forEach((row) => {
             useSet.add(row[0]);
           });
         }
