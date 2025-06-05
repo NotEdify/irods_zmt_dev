@@ -82,7 +82,6 @@ export const EditUser = (props) => {
 
   const auth = localStorage.getItem("zmt-token");
   const loggedUserName = localStorage.getItem("zmt-username");
-  console.log(props);
   const params = new URLSearchParams(location.search);
   const [currentUserName, currentUserZone] = params.get("user")
     ? params.get("user").split("#")
