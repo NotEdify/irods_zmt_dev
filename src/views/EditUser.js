@@ -1,6 +1,5 @@
 import React, { Fragment, useEffect, useState } from "react";
 import PropTypes from "prop-types";
-import axios from "axios";
 import { Link, Navigate } from "react-router-dom";
 import { useEnvironment } from "../contexts";
 import {
@@ -106,90 +105,106 @@ export const EditUser = (props) => {
     status: "",
   });
 
-  useEffect(() => {
-    // hide this interface for the current rodsadmin user or user that does not have a name or zone
-    if (
-      loggedUserName === currentUserName ||
-      !currentUserName ||
-      !currentUserZone
-    ) {
-      return <Navigate to="/users" noThrow />;
-    }
-    axios({
-      method: "GET",
-      url: `${httpApiLocation}/query`,
-      headers: {
-        Accept: "application/json",
-        Authorization: `Bearer ${auth}`,
-      },
-      params: {
+  useEffect(
+    () => {
+      // hide this interface for the current rodsadmin user or user that does not have a name or zone
+      if (
+        loggedUserName === currentUserName ||
+        !currentUserName ||
+        !currentUserZone
+      ) {
+        return <Navigate to="/users" noThrow />;
+      }
+
+      const params = new URLSearchParams({
         op: "execute_genquery",
         query: `SELECT USER_TYPE WHERE USER_NAME = '${currentUserName}' AND USER_ZONE = '${currentUserZone}'`,
         limit: 100,
-        offset: 0,
-      },
-    })
-      .then((res) => {
-        // navigate back to /user if the username provided does not exist
-        res.data.rows.length > 0 ? (
-          setUserType({ ...userType, value: res.data.rows[0][0] })
-        ) : (
-          <Navigate to="/users" noThrow />
-        );
-      })
-      .catch(() => {
-        return <Navigate to="/users" noThrow />;
       });
-  }, [
-    currentUserName,
-    auth,
-    currentUserZone,
-    httpApiLocation,
-    loggedUserName,
-    userType,
-  ]);
 
-  useEffect(() => {
-    if (currentUserName) {
-      setLoading(true);
-      axios({
+      fetch(`${httpApiLocation}/query?${params.toString()}`, {
         method: "GET",
-        url: `${httpApiLocation}/query`,
         headers: {
           Accept: "application/json",
           Authorization: `Bearer ${auth}`,
         },
-        params: {
-          op: "execute_genquery",
-          query: `SELECT USER_GROUP_NAME WHERE USER_NAME = '${currentUserName}' AND USER_GROUP_NAME != '${currentUserName}'`,
-          limit: 100,
-          offset: 0,
-        },
-      }).then((res) => {
-        setGroupsOfUser(res.data.rows);
-        setLoading(false);
+      })
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error(JSON.stringify(res));
+        })
+        .then((data) => {
+          // navigate back to /user if the username provided does not exist
+          data.rows.length > 0 ? (
+            setUserType({ ...userType, value: data.rows[0][0] })
+          ) : (
+            <Navigate to="/users" noThrow />
+          );
+        })
+        .catch(() => {
+          return <Navigate to="/users" noThrow />;
+        });
+    },
+    [
+      //currentUserName,
+      //auth,
+      //currentUserZone,
+      //httpApiLocation,
+      //loggedUserName,
+      //userType,
+    ],
+  );
+
+  useEffect(() => {
+    if (currentUserName) {
+      setLoading(true);
+
+      const params = new URLSearchParams({
+        op: "execute_genquery",
+        query: `SELECT USER_GROUP_NAME WHERE USER_NAME = '${currentUserName}' AND USER_GROUP_NAME != '${currentUserName}'`,
+        limit: 100,
+        offset: 0,
       });
+
+      fetch(`${httpApiLocation}/query?${params.toString()}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${auth}`,
+        },
+      })
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error(JSON.stringify(res));
+        })
+        .then((data) => {
+          setGroupsOfUser(data.rows);
+          setLoading(false);
+        });
     }
   }, [auth, currentUserName, httpApiLocation]);
 
   useEffect(() => {
     if (currentUserName) {
-      axios({
+      const params = new URLSearchParams({
+        op: "execute_genquery",
+        query: `SELECT USER_NAME WHERE USER_GROUP_NAME LIKE '%${filterGroupName.toUpperCase()}%' AND USER_TYPE = 'RODSGROUP'`,
+        limit: 100,
+        "case-sensitive": 0,
+      });
+
+      fetch(`${httpApiLocation}/query?${params.toString()}`, {
         method: "GET",
-        url: `${httpApiLocation}/query`,
         headers: {
           Authorization: `Bearer ${auth}`,
         },
-        params: {
-          op: "execute_genquery",
-          query: `SELECT USER_NAME WHERE USER_GROUP_NAME LIKE '%${filterGroupName.toUpperCase()}%' AND USER_TYPE = 'RODSGROUP'`,
-          limit: 100,
-          offset: 0,
-          "case-sensitive": 0,
-        },
-      }).then((res) => {
-        setFilterNameResult(res.data.rows);
-      });
+      })
+        .then((res) => {
+          if (res.ok) return res.json();
+        })
+        .then((data) => {
+          setFilterNameResult(data.irods_response.rows);
+        });
     }
   }, [auth, httpApiLocation, filterGroupName, currentUserName]);
 
@@ -567,4 +582,3 @@ export const EditUser = (props) => {
 EditUser.propTypes = {
   location: PropTypes.any,
 };
-
