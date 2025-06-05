@@ -1,36 +1,35 @@
-import axios from 'axios';
-
 export const AddSpecificQueryController = (alias, sqlStr, httpApiLocation) => {
-    const params = new URLSearchParams({
-        op: "add_specific_query",
-        name: alias,
-        sql: sqlStr
-    });
+  const url = `${httpApiLocation}/query`;
+  const params = new URLSearchParams({
+    op: "add_specific_query",
+    name: alias,
+    sql: sqlStr,
+  });
 
-    return axios.post(
-        `${httpApiLocation}/query`,
-        params,
-        {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('zmt-token')}`,
-            }
-        } 
-    );
+  return fetch(url, {
+    method: "POST",
+    body: params.toString(),
+    headers: {
+      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+      Authorization: `Bearer ${localStorage.getItem("zmt-token")}`,
+    },
+  });
 };
 
 export const DeleteSpecificQueryController = (alias, httpApiLocation) => {
-    const params = new URLSearchParams({
-        op: "remove_specific_query",
-        name: alias,
-    });
+  const url = `${httpApiLocation}/query`;
+  const params = new URLSearchParams({
+    op: "remove_specific_query",
+    name: alias,
+  });
 
-    return axios.post(
-        `${httpApiLocation}/query`,
-        params,
-        {
-            headers: {
-                'Authorization': `Bearer ${localStorage.getItem('zmt-token')}`,
-            }
-        } 
-    );
+  return fetch(url, {
+    method: "POST",
+    body: params.toString(),
+    headers: {
+      "content-type": "application/x-www-form-urlencoded;charset=UTF-8",
+      Authorization: `Bearer ${localStorage.getItem("zmt-token")}`,
+    },
+  });
 };
+
