@@ -10,7 +10,6 @@
     "@mui/material": "^6.1.0",
     "@mui/styles": "^6.1.0",
     "@mui/x-tree-view": "^7.17.0",
-    "axios": "^1.7.7",
     "cors": "^2.8.5",
     "fade": "^0.2.0",
     "globals": "^15.9.0",
